@@ -1,4 +1,5 @@
 (function () {
+  const controls = document.querySelector(".controls");
   const productSelect = document.getElementById("productSelect");
   const daySlider = document.getElementById("daySlider");
   const timeSlider = document.getElementById("timeSlider");
@@ -11,6 +12,7 @@
 
   // cacheKey -> { img: HTMLImageElement, status: "pending" | "loaded" | "error" }
   const cache = new Map();
+  let displayedNaturalSize = null; // { w, h } of the currently-shown image
 
   function cacheKey(param, day, time) {
     return `${param}|${day}|${time}`;
@@ -90,6 +92,8 @@
       forecastImage.classList.remove("hidden");
       spinner.hidden = true;
       nodata.hidden = true;
+      displayedNaturalSize = { w: entry.img.naturalWidth, h: entry.img.naturalHeight };
+      syncControlsWidth();
     } else if (entry.status === "error") {
       forecastImage.classList.add("hidden");
       spinner.hidden = true;
@@ -103,6 +107,24 @@
     forecastImage.classList.add("hidden");
     spinner.hidden = false;
     nodata.hidden = true;
+  }
+
+  // Keep the controls the same width as the displayed image. Images vary in
+  // aspect ratio (area maps vs. cross-sections vs. soundings) and the page's
+  // own layout scales them to fit, so the rendered width isn't knowable up
+  // front -- compute it the same way object-fit:contain would (scaled to fit
+  // the image area's content box, never upscaled past natural size) using
+  // the already-decoded image's natural dimensions, rather than reading the
+  // <img> element's own box back (which depends on the browser having
+  // already committed a render frame, and isn't reliably synchronous).
+  function syncControlsWidth() {
+    if (!displayedNaturalSize) return;
+    const rect = imageArea.getBoundingClientRect();
+    const cs = getComputedStyle(imageArea);
+    const availW = rect.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const availH = rect.height - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const scale = Math.min(availW / displayedNaturalSize.w, availH / displayedNaturalSize.h, 1);
+    controls.style.width = `${displayedNaturalSize.w * scale}px`;
   }
 
   function stepTime(delta) {
@@ -140,6 +162,8 @@
     if (event.button !== 0) return;
     stepTime(event.shiftKey ? -1 : 1);
   });
+
+  window.addEventListener("resize", syncControlsWidth);
 
   function init() {
     daySlider.max = String(DAYS.length - 1);

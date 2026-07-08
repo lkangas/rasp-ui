@@ -22,6 +22,9 @@ body {
   gap: 8px;
   padding: 10px 12px;
   flex: none;
+  align-self: center;
+  width: 100%;
+  max-width: 480px; /* sane default until app.js measures the actual image width */
 }
 
 select {
