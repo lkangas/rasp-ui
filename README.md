@@ -8,8 +8,6 @@ no forecast imagery of its own — it just points `<img>` tags at the source
 site's own URLs and adds a product picker, a day slider and a time slider on
 top, with every image for the selected product preloaded up front.
 
-Live at [weather.defocus.fi/rasp/](https://weather.defocus.fi/rasp/).
-
 ## Use
 
 Open `index.html` directly in a browser, or serve the directory statically
