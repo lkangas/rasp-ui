@@ -3,54 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Purjelento-ennuste — RASP</title>
+<title>RASP</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>Purjelento-ennuste</h1>
-  <span class="muted">RASP / ennuste.ilmailuliitto.fi</span>
-  <div class="spacer"></div>
-  <label class="field">
-    <span>Tarkkuus</span>
-    <select id="parsetSelect"></select>
-  </label>
-  <label class="field grow">
-    <span>Tuote</span>
-    <select id="productSelect"></select>
-  </label>
-</header>
-
-<main>
-  <div class="sliders">
-    <div class="slider-row">
-      <span class="slider-label" id="dayLabel">1. päivä</span>
-      <input type="range" id="daySlider" min="0" step="1" value="0">
-    </div>
-    <div class="slider-row">
-      <button id="playBtn" type="button" title="Toista ajat peräkkäin">▶</button>
-      <span class="slider-label" id="timeLabel">12:00</span>
-      <input type="range" id="timeSlider" min="0" step="1" value="0">
-    </div>
+<div class="controls">
+  <select id="productSelect"></select>
+  <div class="slider-row">
+    <span class="slider-label" id="dayLabel">1. päivä</span>
+    <input type="range" id="daySlider" min="0" step="1" value="0">
   </div>
-
-  <div id="preloadStatus" class="muted"></div>
-
-  <div class="image-area" id="imageArea">
-    <img id="forecastImage" alt="Purjelentoennuste">
-    <div id="spinner" class="spinner" hidden></div>
-    <div id="nodata" class="nodata" hidden>Kuvaa ei saatavilla tälle ajalle.</div>
+  <div class="slider-row">
+    <span class="slider-label" id="timeLabel">12:00</span>
+    <input type="range" id="timeSlider" min="0" step="1" value="0">
   </div>
+</div>
 
-  <p id="description" class="description"></p>
-</main>
-
-<footer>
-  Kuvat haetaan suoraan
-  <a href="http://ennuste.ilmailuliitto.fi/" target="_blank" rel="noopener">ennuste.ilmailuliitto.fi</a>:stä
-  (Ilmailuliiton RASP-ennuste, Dr. Jack Glendeningin RASP-mallinnukseen pohjautuen). Tämä sivu ei tallenna
-  eikä isännöi ennustekuvia — se on vain vaihtoehtoinen käyttöliittymä samaan aineistoon.
-</footer>
+<div class="image-area" id="imageArea">
+  <img id="forecastImage" alt="RASP-ennuste">
+  <div id="spinner" class="spinner" hidden></div>
+  <div id="nodata" class="nodata" hidden>Ei dataa</div>
+</div>
 
 <script src="config.js"></script>
 <script src="app.js"></script>

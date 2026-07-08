@@ -1,21 +1,16 @@
 (function () {
-  const parsetSelect = document.getElementById("parsetSelect");
   const productSelect = document.getElementById("productSelect");
   const daySlider = document.getElementById("daySlider");
   const timeSlider = document.getElementById("timeSlider");
   const dayLabel = document.getElementById("dayLabel");
   const timeLabel = document.getElementById("timeLabel");
-  const playBtn = document.getElementById("playBtn");
-  const preloadStatus = document.getElementById("preloadStatus");
   const imageArea = document.getElementById("imageArea");
   const forecastImage = document.getElementById("forecastImage");
   const spinner = document.getElementById("spinner");
   const nodata = document.getElementById("nodata");
-  const description = document.getElementById("description");
 
   // cacheKey -> { img: HTMLImageElement, status: "pending" | "loaded" | "error" }
   const cache = new Map();
-  let playTimer = null;
 
   function cacheKey(param, day, time) {
     return `${param}|${day}|${time}`;
@@ -33,55 +28,29 @@
     return TIMES[Number(timeSlider.value)].value;
   }
 
-  // Builds the product list for a given parset index: Perus (0) shows only
-  // non-"extra" params; Laaja (1) shows every param plus the soundings.
-  function productList(parsetIndex) {
-    const params = PARAMS
-      .filter(([, , extra]) => parsetIndex >= 1 || !extra)
-      .map(([name, title]) => ({ value: name, label: title, group: "Parametrit" }));
-    if (parsetIndex < 1) return params;
+  // Every param plus every sounding, grouped in the dropdown.
+  function productList() {
+    const params = PARAMS.map(([name, title]) => ({ value: name, label: title, group: "Parametrit" }));
     const soundings = SOUNDINGS.map(([name, title]) => ({ value: name, label: title, group: "Luotaukset" }));
     return params.concat(soundings);
   }
 
-  function populateParsetSelect() {
-    PARSETS.forEach((label, i) => {
-      const opt = new Option(label, String(i));
-      parsetSelect.add(opt);
-    });
-  }
-
-  function populateProductSelect(preferredValue) {
-    const list = productList(Number(parsetSelect.value));
-    const grouped = new Set(list.map((i) => i.group)).size > 1;
+  function buildProductSelect() {
     const groups = new Map();
-    productSelect.innerHTML = "";
-    for (const item of list) {
-      let parent = productSelect;
-      if (grouped) {
-        parent = groups.get(item.group);
-        if (!parent) {
-          parent = document.createElement("optgroup");
-          parent.label = item.group;
-          productSelect.appendChild(parent);
-          groups.set(item.group, parent);
-        }
+    for (const item of productList()) {
+      let parent = groups.get(item.group);
+      if (!parent) {
+        parent = document.createElement("optgroup");
+        parent.label = item.group;
+        productSelect.appendChild(parent);
+        groups.set(item.group, parent);
       }
       parent.appendChild(new Option(item.label, item.value));
     }
-    const hasPreferred = list.some((i) => i.value === preferredValue);
-    const fallback = list.some((i) => i.value === DEFAULT_PARAM) ? DEFAULT_PARAM : list[0].value;
-    productSelect.value = hasPreferred ? preferredValue : fallback;
-  }
-
-  function updateDescription() {
-    const entry = PARAMS.find(([name]) => name === currentParam());
-    description.textContent = entry ? entry[3] : "";
+    productSelect.value = DEFAULT_PARAM;
   }
 
   function preloadProduct(param) {
-    let total = 0;
-    let done = 0;
     for (const day of DAYS) {
       for (const time of TIMES) {
         const key = cacheKey(param, day.value, time.value);
@@ -89,44 +58,23 @@
         // Keep pending/loaded entries as-is; retry ones that previously errored
         // (a 404 for a not-yet-published forecast hour can resolve later).
         if (existing && existing.status !== "error") continue;
-        total++;
         const entry = { img: new Image(), status: "pending" };
         cache.set(key, entry);
         entry.img.onload = () => {
           entry.status = "loaded";
-          done++;
-          reportProgress(param, done, total);
           refreshDisplay();
         };
         entry.img.onerror = () => {
           entry.status = "error";
-          done++;
-          reportProgress(param, done, total);
           refreshDisplay();
         };
         entry.img.src = buildImageUrl(day.value, param, time.value);
       }
     }
-    if (total === 0) {
-      preloadStatus.textContent = "";
-    } else {
-      reportProgress(param, 0, total);
-    }
-  }
-
-  function reportProgress(param, done, total) {
-    // Ignore progress reports for a product the user has since navigated away from.
-    if (param !== currentParam()) return;
-    preloadStatus.textContent = done < total
-      ? `Ladataan kuvia: ${done}/${total}`
-      : "";
   }
 
   function refreshDisplay() {
-    const param = currentParam();
-    const day = currentDay();
-    const time = currentTime();
-    const key = cacheKey(param, day, time);
+    const key = cacheKey(currentParam(), currentDay(), currentTime());
     const entry = cache.get(key);
 
     if (!entry) {
@@ -176,36 +124,14 @@
     refreshDisplay();
   }
 
-  function onParsetChange() {
-    populateProductSelect(currentParam());
-    updateDescription();
-    preloadProduct(currentParam());
-    refreshDisplay();
-  }
-
   function onProductChange() {
-    updateDescription();
     preloadProduct(currentParam());
     refreshDisplay();
   }
 
-  function setPlaying(playing) {
-    playBtn.classList.toggle("active", playing);
-    playBtn.textContent = playing ? "❚❚" : "▶";
-    if (playTimer) {
-      clearInterval(playTimer);
-      playTimer = null;
-    }
-    if (playing) {
-      playTimer = setInterval(() => stepTime(1), 900);
-    }
-  }
-
-  parsetSelect.addEventListener("change", onParsetChange);
   productSelect.addEventListener("change", onProductChange);
   daySlider.addEventListener("input", onDayChange);
   timeSlider.addEventListener("input", onTimeChange);
-  playBtn.addEventListener("click", () => setPlaying(!playBtn.classList.contains("active")));
   // Listen on the container, not the <img> itself: the image gets
   // visibility:hidden while pending/errored, and hidden elements don't
   // receive pointer events, which would make click-to-step silently do
@@ -219,15 +145,13 @@
     daySlider.max = String(DAYS.length - 1);
     timeSlider.max = String(TIMES.length - 1);
 
-    populateParsetSelect();
-    populateProductSelect(DEFAULT_PARAM);
+    buildProductSelect();
 
     const defaultTimeIndex = TIMES.findIndex((t) => t.value === DEFAULT_TIME);
     timeSlider.value = String(defaultTimeIndex >= 0 ? defaultTimeIndex : 0);
 
     onDayChange();
     onTimeChange();
-    updateDescription();
     preloadProduct(currentParam());
   }
 
