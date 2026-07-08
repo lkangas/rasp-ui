@@ -88,3 +88,12 @@ select {
   color: var(--muted);
   font-size: 13px;
 }
+
+.attribution {
+  flex: none;
+  padding: 6px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+.attribution a { color: inherit; }
